@@ -1,3 +1,10 @@
 *.DS_Store
 /.build
 xcuserdata/
+
+# Web project
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
