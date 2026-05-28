@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "BlackjackEngine",
+    name: "BlackjackApp",
     platforms: [
         .macOS(.v14),
         .iOS(.v17),
     ],
     products: [
-        .library(name: "BlackjackEngine", targets: ["BlackjackEngine"]),
+        .library(name: "BlackjackApp", targets: ["BlackjackApp"]),
     ],
     targets: [
         .target(
-            name: "BlackjackEngine",
+            name: "BlackjackApp",
             path: "BlackjackApp",
             sources: [
                 "Domain/Models",
@@ -23,8 +23,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "BlackjackEngineTests",
-            dependencies: ["BlackjackEngine"],
+            name: "BlackjackAppTests",
+            dependencies: ["BlackjackApp"],
             path: "BlackjackAppTests"
         ),
     ]
