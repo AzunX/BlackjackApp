@@ -43,23 +43,24 @@ final class ShoeTests: XCTestCase {
 
     func test_second_reshuffle_triggers_correctly() async throws {
         let shoe = Shoe()
-        // First reshuffle: deal 234 (75%) then 1 more → shoe resets to 312, now at 311
+        // First reshuffle: deal 235 cards (234 reaches 75%, 235th triggers reshuffle+deal)
+        // After: 311 remaining from the fresh shoe
         for _ in 0..<235 {
             _ = try await shoe.deal()
         }
         let afterFirst = await shoe.remainingCount
-        XCTAssertEqual(afterFirst, 311) // fresh shoe minus 1
+        XCTAssertEqual(afterFirst, 311)
 
-        // Second reshuffle: deal 233 more (total 234 from fresh shoe = 75%) then 1 more
-        for _ in 0..<234 {
+        // Second reshuffle: from 311, need cards.count <= 78 to hit 75% again (1 - 78/312 = 0.75)
+        // 311 - 233 = 78 → deal 233 more to reach the threshold, no reshuffle yet
+        for _ in 0..<233 {
             _ = try await shoe.deal()
         }
-        // At this point penetration of the second shoe = 234/312 = 75%
         let beforeSecond = await shoe.remainingCount
-        XCTAssertEqual(beforeSecond, 77) // 311 - 234 = 77
+        XCTAssertEqual(beforeSecond, 78) // 311 - 233 = 78, penetration = 75% exactly
 
-        _ = try await shoe.deal() // triggers second reshuffle
+        _ = try await shoe.deal() // triggers second reshuffle → fresh 312, deals 1 → 311
         let afterSecond = await shoe.remainingCount
-        XCTAssertEqual(afterSecond, 311) // fresh 312 minus 1 again
+        XCTAssertEqual(afterSecond, 311)
     }
 }
