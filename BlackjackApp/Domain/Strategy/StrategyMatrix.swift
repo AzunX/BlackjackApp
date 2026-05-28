@@ -1,5 +1,3 @@
-import Foundation
-
 final class StrategyMatrix: Sendable {
     static let shared = StrategyMatrix()
     private let table: StrategyTable
@@ -9,7 +7,7 @@ final class StrategyMatrix: Sendable {
     }
 
     /// Returns the optimal Basic Strategy action for the given hand and dealer upcard.
-    /// Falls back to .stand for any edge case not in the table (e.g. score > 21).
+    /// Falls back to a score-based heuristic for any key not in the table.
     func getOptimalAction(for hand: Hand, dealerUpCard: Card) -> BlackjackAction {
         // Busted or Blackjack — no action needed, return stand as sentinel
         guard !hand.isBust && !hand.isBlackjack else { return .stand }
@@ -21,7 +19,7 @@ final class StrategyMatrix: Sendable {
     // MARK: – Private fallback
 
     private func defaultAction(for hand: Hand) -> BlackjackAction {
-        // Sensible default if a key is somehow missing from the table
-        hand.bestScore >= 17 ? .stand : .hit
+        // Use hardTotal (Ace=1) so soft hands don't incorrectly stand at soft 17
+        hand.hardTotal >= 17 ? .stand : .hit
     }
 }

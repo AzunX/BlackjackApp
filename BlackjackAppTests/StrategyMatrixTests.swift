@@ -103,6 +103,78 @@ final class StrategyMatrixTests: XCTestCase {
         }
     }
 
+    // --- Boundary cells: range edges most likely to contain off-by-one bugs ---
+
+    func test_hard9_vs_2_hit() {
+        // Hard 9 doubles only vs 3-6; vs 2 should hit
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .four))
+        hand.add(Card(suit: .spades, rank: .five))
+        let dealer = Card(suit: .clubs, rank: .two)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .hit)
+    }
+
+    func test_hard10_vs_5_double() {
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .six))
+        hand.add(Card(suit: .spades, rank: .four))
+        let dealer = Card(suit: .clubs, rank: .five)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .double)
+    }
+
+    func test_soft17_vs_2_hit() {
+        // Soft 17 doubles only vs 3-6; vs 2 should hit
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .ace))
+        hand.add(Card(suit: .spades, rank: .six))
+        let dealer = Card(suit: .clubs, rank: .two)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .hit)
+    }
+
+    func test_soft13_vs_5_double() {
+        // Smallest soft double range (A+2 vs 5-6 only)
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .ace))
+        hand.add(Card(suit: .spades, rank: .two))
+        let dealer = Card(suit: .clubs, rank: .five)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .double)
+    }
+
+    func test_soft13_vs_4_hit() {
+        // A+2 vs 4: NOT in the double range (doubles start at 5)
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .ace))
+        hand.add(Card(suit: .spades, rank: .two))
+        let dealer = Card(suit: .clubs, rank: .four)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .hit)
+    }
+
+    func test_pair6_vs_7_hit() {
+        // Pair of 6s splits only vs 2-6; vs 7 should hit
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .six))
+        hand.add(Card(suit: .spades, rank: .six))
+        let dealer = Card(suit: .clubs, rank: .seven)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .hit)
+    }
+
+    func test_pair6_vs_6_split() {
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .six))
+        hand.add(Card(suit: .spades, rank: .six))
+        let dealer = Card(suit: .clubs, rank: .six)
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .split)
+    }
+
+    func test_dealer_king_treated_as_value10() {
+        // Face cards must produce dealerValue=10, same lookup path as ten
+        var hand = Hand()
+        hand.add(Card(suit: .hearts, rank: .ten))
+        hand.add(Card(suit: .spades, rank: .six))
+        let dealer = Card(suit: .clubs, rank: .king)  // K → dealerValue=10
+        XCTAssertEqual(matrix.getOptimalAction(for: hand, dealerUpCard: dealer), .hit)
+    }
+
     // MARK: – Helper
 
     private func dealerRank(for value: Int) -> Rank {
