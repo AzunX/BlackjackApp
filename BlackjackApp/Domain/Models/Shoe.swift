@@ -6,7 +6,7 @@ actor Shoe {
 
     static let deckCount        = 6
     static let reshufflePct     = 0.75
-    private let totalCards      = deckCount * 52
+    static let totalCards       = deckCount * 52
 
     private var cards: [Card] = []
 
@@ -19,7 +19,7 @@ actor Shoe {
     var remainingCount: Int { cards.count }
 
     var penetration: Double {
-        1.0 - Double(cards.count) / Double(totalCards)
+        1.0 - Double(cards.count) / Double(Self.totalCards)
     }
 
     /// Deals one card. Reshuffles automatically if penetration >= 75% before dealing.
