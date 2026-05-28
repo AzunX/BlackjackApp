@@ -87,4 +87,31 @@ final class HandTests: XCTestCase {
         hand.add(card(.six))
         XCTAssertEqual(hand.hardTotal, 16)
     }
+
+    func test_threeAces_soft13() {
+        var hand = Hand()
+        hand.add(card(.ace))
+        hand.add(card(.ace))
+        hand.add(card(.ace))
+        XCTAssertEqual(hand.bestScore, 13) // 11+1+1
+        XCTAssertTrue(hand.isSoft)
+    }
+
+    func test_allBust_returnsLowestTotal() {
+        var hand = Hand()
+        hand.add(card(.king))
+        hand.add(card(.king))
+        hand.add(card(.king))
+        XCTAssertEqual(hand.bestScore, 30)
+        XCTAssertTrue(hand.isBust)
+    }
+
+    func test_hardTotal_aceAlwaysCounts1() {
+        // A+10+5 → hardTotal = 1+10+5 = 16
+        var hand = Hand()
+        hand.add(card(.ace))
+        hand.add(card(.ten))
+        hand.add(card(.five))
+        XCTAssertEqual(hand.hardTotal, 16)
+    }
 }
