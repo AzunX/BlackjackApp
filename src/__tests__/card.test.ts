@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   Suit, Rank, CardColor,
-  rankBjValue, rankShortName, suitColor, cardShortDescription,
+  rankBjValue, suitColor, cardShortDescription,
   createCard, cardsEqual,
 } from '../domain/models/card'
 
