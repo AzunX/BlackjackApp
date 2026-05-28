@@ -7,14 +7,14 @@ on:
     branches: ["*"]
 
 jobs:
-  test-macos:
-    name: macOS (Apple Silicon)
-    runs-on: macos-14
+  test-web:
+    name: TypeScript Engine (Node.js)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Version Swift
-        run: swift --version
-
-      - name: Tests
-        run: swift test --parallel 2>&1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
