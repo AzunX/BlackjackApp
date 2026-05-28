@@ -3,7 +3,7 @@ import { Card, ALL_SUITS, ALL_RANKS, createCard } from './card'
 export class Shoe {
   static readonly DECK_COUNT    = 6
   static readonly RESHUFFLE_PCT = 0.75
-  static readonly TOTAL_CARDS   = Shoe.DECK_COUNT * 52  // 312
+  static readonly TOTAL_CARDS   = 6 * 52  // 312 — literal to avoid static self-reference
 
   private cards: Card[] = []
 
