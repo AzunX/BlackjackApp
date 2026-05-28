@@ -45,20 +45,21 @@ struct SideBetResult: Identifiable, Equatable, Sendable {
         let stake = wager.amount
         switch wager.type {
         case .perfectPairs:
-            switch perfectPair {
+            // Unwrap optional first to avoid ambiguity between PerfectPairResult.none and Optional.none
+            switch perfectPair ?? .none {
             case .mixedPair:    return stake * 5
             case .colouredPair: return stake * 10
             case .perfectPair:  return stake * 25
-            case .none, nil:    return -stake
+            case .none:         return -stake
             }
         case .twentyOnePlusThree:
-            switch twentyOnePlusThree {
+            switch twentyOnePlusThree ?? .none {
             case .flush:         return stake * 5
             case .straight:      return stake * 10
             case .threeOfAKind:  return stake * 30
             case .straightFlush: return stake * 40
             case .suitedTrips:   return stake * 100
-            case .none, nil:     return -stake
+            case .none:          return -stake
             }
         }
     }
