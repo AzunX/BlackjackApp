@@ -15,7 +15,7 @@ enum Suit: String, CaseIterable, Sendable {
     }
 }
 
-enum CardColor: Sendable { case red, black }
+enum CardColor: CaseIterable, Sendable { case red, black }
 
 enum Rank: Int, CaseIterable, Sendable {
     case two = 2, three, four, five, six, seven, eight, nine, ten
