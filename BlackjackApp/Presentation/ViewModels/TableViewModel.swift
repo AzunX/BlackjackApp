@@ -9,12 +9,13 @@ final class TableViewModel {
 
     var gameState: GameState = GameState()
 
-    // Pending human action: set by UI buttons (Hit / Stand / Double / Split)
-    // The game loop suspends on a continuation until this is fulfilled.
+    // Pending human action: set by UI buttons (Hit / Stand / Double / Split).
+    // All TableViewModel methods run on @MainActor, so concurrent access is impossible;
+    // humanPlayerChose(_:) is always serialised after the continuation is set.
     private var pendingActionContinuation: CheckedContinuation<BlackjackAction, Never>?
 
-    // Tracks strategy errors accumulated during the current human player's turn
-    private var currentRoundErrors: [StrategyError] = []
+    // Strategy errors keyed by hand index, accumulated during the human player's turn.
+    private var currentRoundErrorsByHand: [Int: [StrategyError]] = [:]
 
     // MARK: – Public action input (called by future View layer)
 
@@ -29,7 +30,11 @@ final class TableViewModel {
     /// Entry point for a new round. Orchestrates the full lifecycle sequentially.
     func startNewRound() async {
         guard canStartRound() else { return }
-        currentRoundErrors = []
+
+        // Safety: resume any stale continuation from a forcibly-abandoned round
+        pendingActionContinuation?.resume(returning: .stand)
+        pendingActionContinuation = nil
+        currentRoundErrorsByHand = [:]
 
         // ── 1. BETTING PHASE ────────────────────────────────────────────────
         gameState.phase = .betting
@@ -100,19 +105,19 @@ final class TableViewModel {
 
         // Round 1 — players first, then dealer face-up
         for player in gameState.players where player.bet > 0 {
-            let card = try gameState.shoe.deal()
+            let card = try await gameState.shoe.deal()
             player.currentHand.add(card)
             // [ANIMATION HOOK] await animateCardFly(to: player.seatIndex)
         }
-        let dealerCard1 = try gameState.shoe.deal()
+        let dealerCard1 = try await gameState.shoe.deal()
         gameState.dealer.currentHand.add(dealerCard1)
 
         // Round 2 — players, then dealer face-down (European BJ: no peek)
         for player in gameState.players where player.bet > 0 {
-            let card = try gameState.shoe.deal()
+            let card = try await gameState.shoe.deal()
             player.currentHand.add(card)
         }
-        let dealerCard2 = try gameState.shoe.deal()
+        let dealerCard2 = try await gameState.shoe.deal()
         gameState.dealer.currentHand.add(dealerCard2)
         // [ANIMATION HOOK] Dealer face-down card placement.
     }
@@ -149,35 +154,38 @@ final class TableViewModel {
             player.activeHandIndex = handIndex
             var hand = player.hands[handIndex]
 
-            while !hand.isTerminal {
+            // Label the while loop so .stand and .double can break it without exiting
+            // the outer for-loop (which would skip remaining split hands).
+            handLoop: while !hand.isTerminal {
                 let action = StrategyMatrix.shared.getOptimalAction(for: hand, dealerUpCard: dealerUp)
                 // [ANIMATION HOOK] await Task.sleep(nanoseconds: 600_000_000)
 
                 switch action {
                 case .hit:
-                    guard let card = try? gameState.shoe.deal() else { return }
+                    guard let card = try? await gameState.shoe.deal() else { break handLoop }
                     hand.add(card)
 
                 case .stand:
                     player.hands[handIndex] = hand
-                    return
+                    break handLoop
 
                 case .double:
-                    guard let card = try? gameState.shoe.deal() else { return }
+                    guard let card = try? await gameState.shoe.deal() else { break handLoop }
                     hand.add(card)
                     player.bankroll -= player.bet
                     player.bet     *= 2
                     player.hands[handIndex] = hand
-                    return
+                    break handLoop
 
                 case .split:
                     guard hand.isPair, player.hands.count < 4 else {
-                        player.hands[handIndex] = hand; return
+                        player.hands[handIndex] = hand
+                        break handLoop
                     }
                     var hand1 = Hand(); hand1.add(hand.cards[0])
                     var hand2 = Hand(); hand2.add(hand.cards[1])
-                    if let extra = try? gameState.shoe.deal() { hand1.add(extra) }
-                    if let extra = try? gameState.shoe.deal() { hand2.add(extra) }
+                    if let extra = try? await gameState.shoe.deal() { hand1.add(extra) }
+                    if let extra = try? await gameState.shoe.deal() { hand2.add(extra) }
                     player.hands[handIndex] = hand1
                     player.hands.insert(hand2, at: handIndex + 1)
                     player.bankroll -= player.bet
@@ -202,11 +210,11 @@ final class TableViewModel {
                     self.pendingActionContinuation = continuation
                 }
 
-                // Record strategy error silently — shown in Bilan at round end
+                // Record strategy error per hand index — shown in Bilan at round end
                 let optimal = StrategyMatrix.shared.getOptimalAction(
                     for: player.hands[handIndex], dealerUpCard: dealerUp)
                 if action != optimal {
-                    currentRoundErrors.append(StrategyError(
+                    currentRoundErrorsByHand[handIndex, default: []].append(StrategyError(
                         playerAction:    action,
                         optimalAction:   optimal,
                         handDescription: describeHand(player.hands[handIndex]),
@@ -216,14 +224,14 @@ final class TableViewModel {
 
                 switch action {
                 case .hit:
-                    guard let card = try? gameState.shoe.deal() else { return }
+                    guard let card = try? await gameState.shoe.deal() else { return }
                     player.hands[handIndex].add(card)
 
                 case .stand:
                     break
 
                 case .double:
-                    guard let card = try? gameState.shoe.deal() else { return }
+                    guard let card = try? await gameState.shoe.deal() else { return }
                     player.hands[handIndex].add(card)
                     player.bankroll -= player.bet
                     player.bet     *= 2
@@ -234,8 +242,8 @@ final class TableViewModel {
                     let original = player.hands[handIndex]
                     var hand1 = Hand(); hand1.add(original.cards[0])
                     var hand2 = Hand(); hand2.add(original.cards[1])
-                    if let c1 = try? gameState.shoe.deal() { hand1.add(c1) }
-                    if let c2 = try? gameState.shoe.deal() { hand2.add(c2) }
+                    if let c1 = try? await gameState.shoe.deal() { hand1.add(c1) }
+                    if let c2 = try? await gameState.shoe.deal() { hand2.add(c2) }
                     player.hands[handIndex] = hand1
                     player.hands.insert(hand2, at: handIndex + 1)
                     player.bankroll -= player.bet
@@ -251,7 +259,7 @@ final class TableViewModel {
         // European Blackjack: dealer stands on all 17s (hard and soft)
         while !gameState.dealer.currentHand.isBust
                 && gameState.dealer.currentHand.bestScore < 17 {
-            guard let card = try? gameState.shoe.deal() else { break }
+            guard let card = try? await gameState.shoe.deal() else { break }
             gameState.dealer.currentHand.add(card)
             // [ANIMATION HOOK] await Task.sleep(nanoseconds: 500_000_000)
         }
@@ -263,11 +271,12 @@ final class TableViewModel {
 
         for player in gameState.players {
             guard player.bet > 0 else { continue }
-            let errors = player.type == .human ? currentRoundErrors : []
 
             for (idx, hand) in player.hands.enumerated() {
-                let eval = HandEvaluator.outcome(player: hand, dealer: dealerHand)
-                let xp   = player.type == .human
+                let eval   = HandEvaluator.outcome(player: hand, dealer: dealerHand)
+                // Errors are tracked per hand index so split hands get independent feedback
+                let errors = player.type == .human ? (currentRoundErrorsByHand[idx] ?? []) : []
+                let xp     = player.type == .human
                     ? HandEvaluator.xpEarned(strategyErrors: errors, outcome: eval.outcome)
                     : 0
 
@@ -291,7 +300,9 @@ final class TableViewModel {
             else { continue }
 
             player.bankroll += result.netPayout
-            // Return original bet stake on non-loss outcomes
+            // Return original bet stake on non-loss outcomes.
+            // Note: full per-hand bet tracking (required for correct split/double accounting)
+            // will be implemented when the bet-placement flow is added (humanBetConfirmed).
             if result.outcome != .loss && result.outcome != .bust {
                 player.bankroll += player.bet
             }
