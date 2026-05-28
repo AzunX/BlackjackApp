@@ -94,17 +94,20 @@ final class HandEvaluatorTests: XCTestCase {
 
     // MARK: – XP
 
-    func test_xpEarned_correctDecision() {
-        let xp = HandEvaluator.xpEarned(strategyErrors: [], outcome: .win)
-        XCTAssertGreaterThan(xp, 0)
+    func test_xpEarned_exactBaseValues() {
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [], outcome: .blackjack), 50)
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [], outcome: .win),       20)
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [], outcome: .push),      10)
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [], outcome: .loss),       5)
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [], outcome: .bust),       2)
     }
 
-    func test_xpEarned_errorReducesXp() {
-        let noError  = HandEvaluator.xpEarned(strategyErrors: [], outcome: .win)
-        let withError = HandEvaluator.xpEarned(strategyErrors: [
-            StrategyError(playerAction: .hit, optimalAction: .stand,
-                          handDescription: "Hard 16", dealerUpCard: "6")
-        ], outcome: .win)
-        XCTAssertGreaterThan(noError, withError)
+    func test_xpEarned_penaltyPerError() {
+        let error = StrategyError(playerAction: .hit, optimalAction: .stand,
+                                  handDescription: "Hard 16", dealerUpCard: "6")
+        // win base=20 minus 1 error×8 = 12
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [error], outcome: .win), 12)
+        // 3 errors: 20 - 24 = clamped to 0
+        XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [error, error, error], outcome: .win), 0)
     }
 }
