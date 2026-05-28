@@ -13,6 +13,7 @@ enum GamePhase: Equatable, Sendable {
 }
 
 @Observable
+@MainActor
 final class GameState {
     var phase: GamePhase       = .idle
     var players: [Player]      = []

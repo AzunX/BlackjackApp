@@ -23,6 +23,7 @@ enum PlayerRank: String, CaseIterable, Sendable {
 }
 
 @Observable
+@MainActor
 final class Player: Identifiable {
     let id: UUID        = UUID()
     let type: PlayerType
@@ -44,8 +45,14 @@ final class Player: Identifiable {
     let seatIndex: Int
 
     var currentHand: Hand {
-        get { hands[activeHandIndex] }
-        set { hands[activeHandIndex] = newValue }
+        get {
+            assert(hands.indices.contains(activeHandIndex), "activeHandIndex \(activeHandIndex) out of range for hands.count \(hands.count)")
+            return hands.indices.contains(activeHandIndex) ? hands[activeHandIndex] : Hand()
+        }
+        set {
+            guard hands.indices.contains(activeHandIndex) else { return }
+            hands[activeHandIndex] = newValue
+        }
     }
 
     var bet: Double     = 0
