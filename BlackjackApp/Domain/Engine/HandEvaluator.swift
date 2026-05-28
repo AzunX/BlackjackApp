@@ -65,7 +65,10 @@ enum HandEvaluator {
         let allSameRank = Set(ranks.map(\.rawValue)).count == 1
         let isSequential: Bool = {
             let values = ranks.map(\.rawValue)
-            return values[2] - values[1] == 1 && values[1] - values[0] == 1
+            let normalSeq = values[2] - values[1] == 1 && values[1] - values[0] == 1
+            // Ace-low straight: A-2-3 sorts as [2, 3, 14] because Ace.rawValue == 14
+            let aceLowSeq  = values == [2, 3, 14]
+            return normalSeq || aceLowSeq
         }()
 
         if allSameRank && allSameSuit { return .suitedTrips   }

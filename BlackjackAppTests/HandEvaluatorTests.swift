@@ -110,4 +110,63 @@ final class HandEvaluatorTests: XCTestCase {
         // 3 errors: 20 - 24 = clamped to 0
         XCTAssertEqual(HandEvaluator.xpEarned(strategyErrors: [error, error, error], outcome: .win), 0)
     }
+
+    // MARK: – 21+3
+
+    private func c(_ rank: Rank, _ suit: Suit) -> Card { Card(suit: suit, rank: rank) }
+
+    func test_21plus3_suitedTrips() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.eight, .hearts), playerCard2: c(.eight, .hearts), dealerUp: c(.eight, .hearts))
+        XCTAssertEqual(result, .suitedTrips)
+    }
+
+    func test_21plus3_threeOfAKind() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.eight, .hearts), playerCard2: c(.eight, .clubs), dealerUp: c(.eight, .spades))
+        XCTAssertEqual(result, .threeOfAKind)
+    }
+
+    func test_21plus3_straightFlush() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.seven, .diamonds), playerCard2: c(.eight, .diamonds), dealerUp: c(.nine, .diamonds))
+        XCTAssertEqual(result, .straightFlush)
+    }
+
+    func test_21plus3_straight_mixedSuits() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.seven, .hearts), playerCard2: c(.eight, .clubs), dealerUp: c(.nine, .spades))
+        XCTAssertEqual(result, .straight)
+    }
+
+    func test_21plus3_flush_notSequential() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.two, .spades), playerCard2: c(.five, .spades), dealerUp: c(.king, .spades))
+        XCTAssertEqual(result, .flush)
+    }
+
+    func test_21plus3_none() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.two, .hearts), playerCard2: c(.seven, .clubs), dealerUp: c(.king, .spades))
+        XCTAssertEqual(result, .none)
+    }
+
+    func test_21plus3_aceHighStraight_QKA() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.queen, .hearts), playerCard2: c(.king, .clubs), dealerUp: c(.ace, .spades))
+        XCTAssertEqual(result, .straight)
+    }
+
+    func test_21plus3_aceLowStraight_A23() {
+        // Ace.rawValue=14 sorts last; special-case [2,3,14] must be detected
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.ace, .hearts), playerCard2: c(.two, .clubs), dealerUp: c(.three, .spades))
+        XCTAssertEqual(result, .straight)
+    }
+
+    func test_21plus3_aceLowStraightFlush_A23sameSuit() {
+        let result = HandEvaluator.twentyOnePlusThreeResult(
+            playerCard1: c(.ace, .clubs), playerCard2: c(.two, .clubs), dealerUp: c(.three, .clubs))
+        XCTAssertEqual(result, .straightFlush)
+    }
 }
