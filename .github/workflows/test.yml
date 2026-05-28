@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  # Runner macOS : compile et teste avec le vrai toolchain Apple (Swift 5.9 / Xcode 15)
+  test-macos:
+    name: macOS (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version Swift
+        run: swift --version
+
+      - name: Tests
+        run: swift test --parallel 2>&1
+
+  # Runner Linux : tests rapides du moteur pur Swift (sans frameworks iOS)
+  test-linux:
+    name: Linux (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Swift 5.10
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.10"
+
+      - name: Version Swift
+        run: swift --version
+
+      - name: Tests
+        run: swift test --parallel 2>&1
