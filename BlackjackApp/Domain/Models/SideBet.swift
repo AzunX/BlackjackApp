@@ -27,19 +27,20 @@ enum SideBetType: String, CaseIterable, Sendable {
     case twentyOnePlusThree
 }
 
-struct SideBetWager: Identifiable, Sendable {
+struct SideBetWager: Identifiable, Equatable, Sendable {
     let id: UUID        = UUID()
     let type: SideBetType
     let amount: Double
 }
 
-struct SideBetResult: Identifiable, Sendable {
+struct SideBetResult: Identifiable, Equatable, Sendable {
     let id: UUID          = UUID()
     let wager: SideBetWager
+    // Invariant: exactly one of these is non-nil, matching wager.type
     let perfectPair:        PerfectPairResult?
     let twentyOnePlusThree: TwentyOnePlusThreeResult?
 
-    /// Net payout including return of wager (positive = win, 0 = push, negative = loss).
+    /// Net payout (positive = win, negative = loss). Does not include return of stake.
     var netPayout: Double {
         let stake = wager.amount
         switch wager.type {
@@ -48,7 +49,7 @@ struct SideBetResult: Identifiable, Sendable {
             case .mixedPair:    return stake * 5
             case .colouredPair: return stake * 10
             case .perfectPair:  return stake * 25
-            default:            return -stake
+            case .none, nil:    return -stake
             }
         case .twentyOnePlusThree:
             switch twentyOnePlusThree {
@@ -57,7 +58,7 @@ struct SideBetResult: Identifiable, Sendable {
             case .threeOfAKind:  return stake * 30
             case .straightFlush: return stake * 40
             case .suitedTrips:   return stake * 100
-            default:             return -stake
+            case .none, nil:     return -stake
             }
         }
     }
