@@ -16,7 +16,7 @@ enum TwentyOnePlusThreeResult: String, Sendable {
     case flush         // same suit, no sequence              — payout 5:1
     case straight      // sequential ranks, mixed suits       — payout 10:1
     case threeOfAKind  // same rank, different suits          — payout 30:1
-    case straightFlash // sequential ranks, same suit         — payout 40:1
+    case straightFlush // sequential ranks, same suit         — payout 40:1
     case suitedTrips   // same rank AND same suit             — payout 100:1
 }
 
@@ -55,7 +55,7 @@ struct SideBetResult: Identifiable, Sendable {
             case .flush:         return stake * 5
             case .straight:      return stake * 10
             case .threeOfAKind:  return stake * 30
-            case .straightFlash: return stake * 40
+            case .straightFlush: return stake * 40
             case .suitedTrips:   return stake * 100
             default:             return -stake
             }
