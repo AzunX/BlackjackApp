@@ -1,6 +1,6 @@
 import { Rank } from '../domain/models/card'
 import { BlackjackAction } from '../domain/models/gameState'
-import { StrategyKey, strategyKeyToString } from '../domain/strategy/strategyKey'
+import { strategyKeyToString } from '../domain/strategy/strategyKey'
 
 export type StrategyTable = Map<string, BlackjackAction>
 
