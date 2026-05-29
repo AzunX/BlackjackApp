@@ -1,9 +1,5 @@
-function App() {
-  return (
-    <div>
-      <h1>Blackjack</h1>
-    </div>
-  )
-}
+import { GameBoard } from './components/GameBoard'
 
-export default App
+export default function App() {
+  return <GameBoard />
+}
