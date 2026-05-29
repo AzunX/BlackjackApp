@@ -42,7 +42,7 @@ export function Card({
         {/* Face */}
         <div
           className="card-face absolute inset-0 flex flex-col p-1 select-none"
-          style={{ backfaceVisibility: 'hidden' }}
+          style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           <div className={`flex flex-col items-start leading-none ${isRed ? 'text-card-red' : 'text-card-black'}`}>
             <span className="text-base font-bold">{rankShortName(card.rank)}</span>
@@ -60,7 +60,7 @@ export function Card({
         {/* Back */}
         <div
           className="card-back absolute inset-0 flex items-center justify-center"
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
           <div className="w-10 h-14 border border-blue-400/40 rounded-sm" />
         </div>
